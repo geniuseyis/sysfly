@@ -18,7 +18,7 @@ Flutter ile yazılmış, iPhone öncelikli bir uçak bileti rezervasyon uygulama
 
 <br>
 
-**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Özellikler](#özellikler)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Çalıştırma](#çalıştırma)** &nbsp;·&nbsp; **[Testler](#testler)** &nbsp;·&nbsp; **[Güvenlik](#güvenlik)**
+**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Özellikler](#özellikler)** &nbsp;·&nbsp; **[Hareket](#hareket)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Güvenlik](#güvenlik)**
 
 </div>
 
@@ -135,52 +135,6 @@ lib/
 | Yazı | Plus Jakarta Sans, Playball (OFL) |
 | Kalıcılık | shared_preferences |
 | Paylaşım | share_plus |
-| Test | flutter_test, golden testler, integration_test |
-
-<br>
-
-## Çalıştırma
-
-```bash
-flutter pub get
-flutter run
-```
-
-Giriş için herhangi bir e-posta ve en az 6 karakterlik şifre yeterli. Kayıtlı demo hesabı `arya.pratama@mail.com` / `sysfly123`.
-
-**Android sürüm derlemesi** imza bilgilerini depoya girmeyen `android/key.properties` dosyasından okur:
-
-```properties
-storeFile=/mutlak/yol/upload-keystore.jks
-storePassword=...
-keyAlias=upload
-keyPassword=...
-```
-
-Dosya yoksa sürüm derlemesi debug anahtarıyla imzalanır; bu derleme mağazaya yüklenemez.
-
-**Havalimanı verisini yenilemek** için `node tool/build_airport_data.js`, **README görsellerini ve uygulama ikonunu üretmek** için `flutter test test/visual --update-goldens` ardından `node tool/build_readme_screens.js` (sharp gerekir).
-
-<br>
-
-## Testler
-
-```bash
-flutter analyze
-flutter test
-flutter test integration_test/app_test.dart -d <cihaz>
-```
-
-| Paket | Kapsam |
-| :-- | :-- |
-| `test/unit` | Fiyat hesabı, filtre ve sıralama, örnek tarife, koltuk haritası, doğrulayıcılar (T.C. kimlik, Luhn, Miles&Smiles), PDF yapısı, takvim dosyası |
-| `test/widgets` | Navigasyon barı: kapsülün yolu, yay aşımı, esneme, hızlı dokunuşlar, sürükleme, Hareketi Azalt, erişilebilirlik |
-| `test/flows` | Aramadan My Flights'a uçtan uca rezervasyon |
-| `test/l10n` | Çeviri tablosu bütünlüğü, çeviri motoru, havalimanı kataloğu, 14 ekranın altı dilde taşmadan çizilmesi, anında dil değişimi |
-| `test/visual` | 29 ekranın ve uygulama ikonunun görüntü karşılaştırması |
-| `integration_test` | Cihazda giriş, sekme geçişleri ve mercek sürükleme |
-
-Son çalıştırmada 80 testin tamamı geçti.
 
 <br>
 
@@ -191,7 +145,7 @@ Son çalıştırmada 80 testin tamamı geçti.
 - Şifre saklanmaz; "Beni hatırla" yalnızca e-postayı tutar.
 - Android'de uygulama verisi bulut yedeğine ve cihazdan cihaza aktarıma kapalı.
 - Uygulama ağa çıkmaz; Android sürüm derlemesinde internet izni yok.
-- Sürüm derlemesi küçültülür (R8) ve imza bilgileri `.gitignore` ile depo dışında tutulur.
+- Sürüm derlemesi küçültülür (R8); imza anahtarları depoda tutulmaz.
 
 <br>
 
@@ -202,9 +156,3 @@ Son çalıştırmada 80 testin tamamı geçti.
 - Uçuşlar, saatler, fiyatlar, koltuklar ve uçuş durumları **örnek veridir**. THY tarife aileleri ve bagaj hakları kamuya açık bilgilerden sadeleştirilmiştir; gerçek kurallar rotaya göre değişir.
 - Ödeme bir simülasyondur; para çekilmez, gerçek bilet düzenlenmez, e-posta gönderilmez.
 - Turkish Airlines, Miles&Smiles ve diğer havayolu adları sahiplerinin markalarıdır; bu proje hiçbiriyle bağlantılı değildir.
-
-<br>
-
-## Durum
-
-Tamamlananlar, doğrulamalar ve açık kalanlar [`docs/PROGRESS.md`](docs/PROGRESS.md) içinde. iOS derlemesi henüz bir Mac üzerinde doğrulanmadı.
