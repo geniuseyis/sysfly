@@ -97,7 +97,7 @@ function shortName(name) {
     '',
     `/// Country names by ISO code, in the order: ${LANGS.join(', ')}.`,
     'const Map<String, List<String>> kCountryNames = {',
-    ...used.map((cc) => `  '${cc}': [${names.map((n) => `'${esc(n[cc + '-alt-short'] || n[cc] || cc)}'`).join(', ')}],`),
+    ...used.map((cc) => `  '${cc}': [${names.map((n) => `'${esc(n[cc] || cc)}'`).join(', ')}],`),
     '};',
     '',
   ];
