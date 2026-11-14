@@ -7,11 +7,12 @@ import 'sysfly_controls.dart';
 import 'sysfly_flag.dart';
 import 'sysfly_sheet.dart';
 
-/// Searchable, grouped airport list for a bottom sheet.
+/// Searchable airport list for a bottom sheet, organised by country.
 ///
-/// With no search text it shows the first [popularCount] airports grouped as
-/// given, followed by every other airport by continent. Typing searches the
-/// whole list by code, airport, city or country.
+/// With no search text it shows the first [popularCount] airports grouped by
+/// region, then every country with its number of airports; tapping a
+/// country lists only its airports. Typing searches the whole catalogue and
+/// shows matching countries first, then airports under their country.
 class SysflyAirportSelector extends StatefulWidget {
   const SysflyAirportSelector({
     super.key,
@@ -43,66 +44,122 @@ class SysflyAirportSelector extends StatefulWidget {
   State<SysflyAirportSelector> createState() => _SysflyAirportSelectorState();
 }
 
+/// A country in the list: its code and how many airports it has.
+class _CountryItem {
+  const _CountryItem(this.code, this.count);
+  final String code;
+  final int count;
+}
+
+/// Section title with a count, e.g. "Asia · 9 airports".
+class _Header {
+  const _Header(this.title, this.count, {this.unit = 'airport'});
+  final String title;
+  final int count;
+  final String unit;
+}
+
 class _SysflyAirportSelectorState extends State<SysflyAirportSelector> {
   final _query = TextEditingController();
+  final _scroll = ScrollController();
 
-  /// Headers (String) and airports, in display order.
-  List<Object> _items = const [];
-  List<Airport>? _itemsFor;
-  String _itemsQuery = '\u0000';
+  /// Country being browsed, or null for the overview.
+  String? _country;
+
+  /// Airports by country code, built once per catalogue.
+  Map<String, List<Airport>> _byCountry = const {};
+  List<Airport>? _indexedFor;
 
   @override
   void dispose() {
     _query.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  void _index() {
+    if (identical(_indexedFor, widget.airports)) return;
+    _indexedFor = widget.airports;
+    final map = <String, List<Airport>>{};
+    for (final airport in widget.airports) {
+      map.putIfAbsent(airport.countryCode, () => []).add(airport);
+    }
+    // Catalogue order is kept: popular airports, then large, medium and small.
+    _byCountry = map;
   }
 
   bool _matches(Airport airport, String q) =>
       airport.matches(q) || L10n.country(airport.countryCode).toLowerCase().contains(q);
 
-  /// Flattens groups into one list so it can be built lazily.
-  List<Object> _flatten(Map<String, List<Airport>> groups) => [
-        for (final entry in groups.entries) ...[
-          '${entry.key}\n${entry.value.length == 1 ? '1 airport' : '${entry.value.length} airports'}',
-          ...entry.value,
-        ],
-      ];
+  List<_CountryItem> _countries(Iterable<String> codes) {
+    final list = [for (final code in codes) _CountryItem(code, _byCountry[code]?.length ?? 0)];
+    list.sort((a, b) => _sortKey(L10n.country(a.code)).compareTo(_sortKey(L10n.country(b.code))));
+    return list;
+  }
 
-  void _rebuildItems() {
+  /// Folds accented Latin letters onto their base letter so "Çad" sorts
+  /// with C and "Österreich" with O.
+  static String _sortKey(String name) {
+    const from = 'çğıiöşüâêîôûàèìòùáéíóúäëïöüñåøæœÇĞIİÖŞÜÂÊÎÔÛÀÈÌÒÙÁÉÍÓÚÄËÏÖÜÑÅØÆŒ';
+    const to = 'cgiiosuaeiouaeiouaeiouaeiounaoaoCGIIOSUAEIOUAEIOUAEIOUAEIOUNAOAO';
+    final out = StringBuffer();
+    for (final ch in name.split('')) {
+      final i = from.indexOf(ch);
+      out.write(i >= 0 ? to[i] : ch);
+    }
+    return out.toString().toLowerCase();
+  }
+
+  void _open(String? country) {
+    setState(() => _country = country);
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+  }
+
+  /// Rows in display order: [_Header], [_CountryItem] or [Airport].
+  List<Object> _items() {
     final q = _query.text.trim().toLowerCase();
-    if (identical(_itemsFor, widget.airports) && q == _itemsQuery) return;
-    _itemsFor = widget.airports;
-    _itemsQuery = q;
-    final groups = <String, List<Airport>>{};
-    if (q.isEmpty) {
-      final popular = widget.popularCount.clamp(0, widget.airports.length);
-      for (final airport in widget.airports.take(popular)) {
-        groups.putIfAbsent(airport.region, () => []).add(airport);
-      }
-      final rest = <String, List<Airport>>{};
-      for (final airport in widget.airports.skip(popular)) {
-        rest.putIfAbsent(airport.region, () => []).add(airport);
-      }
-      for (final name in rest.keys.toList()..sort()) {
-        // A continent that already leads the list keeps its popular airports
-        // on top and continues below under "… · more".
-        groups[groups.containsKey(name) ? '$name · more' : name] = rest[name]!
-          ..sort((a, b) => a.country == b.country ? a.city.compareTo(b.city) : a.country.compareTo(b.country));
-      }
-    } else {
+
+    if (q.isNotEmpty) {
+      // Matching countries first, then matching airports under their country.
+      final countries = _countries(_byCountry.keys.where((c) => L10n.country(c).toLowerCase().contains(q)));
+      final airports = <String, List<Airport>>{};
       var count = 0;
       for (final airport in widget.airports) {
         if (!_matches(airport, q)) continue;
-        groups.putIfAbsent(airport.region, () => []).add(airport);
+        airports.putIfAbsent(airport.countryCode, () => []).add(airport);
         if (++count >= SysflyAirportSelector.maxResults) break;
       }
+      return [
+        if (countries.isNotEmpty) ...[_Header('Countries', countries.length, unit: 'country'), ...countries.take(6)],
+        for (final entry in airports.entries) ...[_Header(L10n.country(entry.key), entry.value.length), ...entry.value],
+      ];
     }
-    _items = _flatten(groups);
+
+    final country = _country;
+    if (country != null) {
+      final airports = _byCountry[country] ?? const <Airport>[];
+      return [_Header(L10n.country(country), airports.length), ...airports];
+    }
+
+    // Overview: the popular airports as in the reference, then every country.
+    final popular = <String, List<Airport>>{};
+    for (final airport in widget.airports.take(widget.popularCount.clamp(0, widget.airports.length))) {
+      popular.putIfAbsent(airport.region, () => []).add(airport);
+    }
+    return [
+      for (final entry in popular.entries) ...[_Header(entry.key, entry.value.length), ...entry.value],
+      if (_byCountry.isNotEmpty) ...[
+        _Header('All countries', _byCountry.length, unit: 'country'),
+        ..._countries(_byCountry.keys),
+      ],
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    _rebuildItems();
+    _index();
+    final items = _items();
+    final browsing = _country != null && _query.text.trim().isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -124,7 +181,7 @@ class _SysflyAirportSelectorState extends State<SysflyAirportSelector> {
           ),
         ),
         Expanded(
-          child: _items.isEmpty
+          child: items.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
@@ -136,24 +193,28 @@ class _SysflyAirportSelectorState extends State<SysflyAirportSelector> {
                   ),
                 )
               : ListView.builder(
+                  controller: _scroll,
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(SysflySpacing.page, 12, SysflySpacing.page, 24),
-                  itemCount: _items.length,
+                  itemCount: items.length,
                   itemBuilder: (context, index) {
-                    final item = _items[index];
-                    if (item is String) {
-                      final parts = item.split('\n');
+                    final item = items[index];
+                    if (item is _Header) {
+                      return _SectionHeader(
+                        header: item,
+                        onBack: browsing && index == 0 ? () => _open(null) : null,
+                      );
+                    }
+                    if (item is _CountryItem) {
                       return Padding(
-                        padding: const EdgeInsets.only(top: 6, bottom: 10),
-                        child: Row(
-                          children: [
-                            TrText(
-                              parts[0],
-                              style: SysflyTypography.captionStrong.copyWith(color: SysflyColors.textPrimary, fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(width: 6),
-                            TrText(parts[1], style: SysflyTypography.caption.copyWith(fontSize: 11.5)),
-                          ],
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _CountryRow(
+                          country: item,
+                          onTap: () {
+                            _query.clear();
+                            FocusScope.of(context).unfocus();
+                            _open(item.code);
+                          },
                         ),
                       );
                     }
@@ -171,6 +232,96 @@ class _SysflyAirportSelectorState extends State<SysflyAirportSelector> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.header, this.onBack});
+
+  final _Header header;
+
+  /// Set while browsing one country: returns to the country list.
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = header.count == 1 ? '1 ${header.unit}' : '${header.count} ${header.unit == 'country' ? 'countries' : 'airports'}';
+    final title = Row(
+      children: [
+        if (onBack != null) ...[
+          const SysflyIcon(SysflyIcons.chevronLeft, size: 16, color: SysflyColors.link),
+          const SizedBox(width: 6),
+        ],
+        Flexible(
+          child: TrText(
+            header.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: SysflyTypography.captionStrong.copyWith(color: SysflyColors.textPrimary, fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(width: 6),
+        TrText(count, style: SysflyTypography.caption.copyWith(fontSize: 11.5)),
+      ],
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 10),
+      child: onBack == null
+          ? title
+          : Semantics(
+              button: true,
+              label: tr('All countries'),
+              child: SysflyPressable(
+                key: const ValueKey('airport-country-back'),
+                onTap: onBack,
+                child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: ExcludeSemantics(child: title)),
+              ),
+            ),
+    );
+  }
+}
+
+class _CountryRow extends StatelessWidget {
+  const _CountryRow({required this.country, required this.onTap});
+
+  final _CountryItem country;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = L10n.country(country.code);
+    final count = country.count == 1 ? '1 airport' : '${country.count} airports';
+    return Semantics(
+      button: true,
+      label: '$name, ${tr(count)}',
+      child: SysflyPressable(
+        key: ValueKey('airport-country-${country.code}'),
+        onTap: onTap,
+        pressedScale: 0.985,
+        child: ExcludeSemantics(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: SysflyColors.surface,
+              borderRadius: BorderRadius.circular(SysflyRadius.lg),
+              border: Border.all(color: SysflyColors.fieldBorder),
+            ),
+            child: Row(
+              children: [
+                SysflyFlag(countryCode: country.code, size: 32),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: SysflyTypography.bodyStrong.copyWith(fontSize: 14.5)),
+                ),
+                TrText(count, style: SysflyTypography.caption.copyWith(fontSize: 11.5)),
+                const SizedBox(width: 8),
+                const SysflyIcon(SysflyIcons.chevronRight, size: 14, color: SysflyColors.textTertiary),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
