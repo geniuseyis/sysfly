@@ -32,7 +32,7 @@ Flutter ile yazılmış, iPhone öncelikli bir uçak bileti rezervasyon uygulama
     </td>
     <td width="50%" valign="top">
       <h4>🌍&nbsp; Gerçek havalimanları</h4>
-      233 ülkede tarifeli seferi olan 4.008 havalimanı; THY uçuşlarında EcoFly, ExtraFly ve PrimeFly tarife aileleri.
+      233 ülkede tarifeli seferi olan 4.007 havalimanı; THY uçuşlarında EcoFly, ExtraFly ve PrimeFly tarife aileleri.
     </td>
   </tr>
   <tr>
@@ -68,7 +68,7 @@ Flutter ile yazılmış, iPhone öncelikli bir uçak bileti rezervasyon uygulama
 
 | Alan | Özellikler |
 | :-- | :-- |
-| **Arama** | Tek yön ve gidiş-dönüş · 4.008 havalimanında kod, şehir, havalimanı ve ülke adıyla arama · gidiş ve dönüş için tarih aralığı gösteren özel takvim · yolcu sayısı ve kabin sınıfı · havalimanı değiştirme animasyonu |
+| **Arama** | Tek yön ve gidiş-dönüş · 4.007 havalimanı ülke ülke listelenir; kod, şehir, havalimanı ve ülke adıyla arama · gidiş ve dönüş için tarih aralığı gösteren özel takvim · yolcu sayısı ve kabin sınıfı · havalimanı değiştirme animasyonu |
 | **Sonuçlar** | Haftalık tarih şeridi · en ucuz, en erken, en hızlı sıralama · kalkış saati ve havayolu filtresi (filtreler sonuçları gerçekten daraltır) · havayolu başına en düşük fiyat |
 | **Tarife** | Lite, Classic, Flex · THY uçuşlarında EcoFly, ExtraFly, PrimeFly; bagaj hakkı, koltuk seçimi, değişiklik ve iade kuralları |
 | **Yolcular** | Unvan, ad soyad, doğum tarihi, uyruk · Türkiye vatandaşları için T.C. kimlik numarası (resmî kontrol hanesi algoritmasıyla) · iç hatlarda pasaport isteğe bağlı · Miles&Smiles numarası · kayıtlı yolcular · iletişim bilgileri |

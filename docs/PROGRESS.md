@@ -9,7 +9,7 @@ Son güncelleme: 14 Kasım 2026
 - Navigasyon barı: yay fizikli kapsül, gerçek cam ve sürükleme merceği.
 - Referansla yan yana karşılaştırma: video ekranları ve sekiz görseldeki 17 ekran.
 - Uygulama adı ve dikey kilit (iOS `Info.plist`, Android manifest).
-- Gerçek havalimanı verisi: 233 ülkede 4008 havalimanı (`assets/data/airports.tsv`).
+- Gerçek havalimanı verisi: 233 ülkede 4007 havalimanı (`assets/data/airports.tsv`).
 - Yedi dil: İngilizce, Türkçe, Almanca, Fransızca, İspanyolca, Rusça, Arapça (Profil → Dil).
 - THY örnek verisi: İstanbul çıkışlı rotalar, EcoFly / ExtraFly / PrimeFly tarife aileleri, THY tarzı yolcu formu (unvan, T.C. kimlik, Miles&Smiles; iç hatlarda pasaport isteğe bağlı).
 - Güvenlik: Android yedekleme kapalı, sürüm imzası `key.properties` ile, R8 küçültme, hassas alanlarda klavye önerisi kapalı.
