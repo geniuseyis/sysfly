@@ -63,6 +63,35 @@ void main() {
     await shot('airport_sheet');
   });
 
+  testWidgets('airport picker by country', (tester) async {
+    await boot(tester);
+    await show(tester, const MainShell());
+    await tester.tap(find.text('DPS'));
+    await settle(tester);
+    // Wait for the full catalogue, which loads from an asset.
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await settle(tester, const Duration(milliseconds: 300));
+
+    final list = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('airport-country-TR')), 400, scrollable: list);
+    await settle(tester, const Duration(milliseconds: 300));
+    await shot('airport_countries');
+
+    await tester.tap(find.byKey(const ValueKey('airport-country-TR')));
+    await settle(tester);
+    expect(find.text('Istanbul Airport'), findsOneWidget);
+    expect(find.text('Changi'), findsNothing);
+    await shot('airport_country_tr');
+
+    await tester.tap(find.byKey(const ValueKey('airport-country-back')));
+    await settle(tester);
+    expect(find.text('Changi'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).last, 'germ');
+    await settle(tester);
+    expect(find.byKey(const ValueKey('airport-country-DE')), findsOneWidget);
+  });
+
   testWidgets('return date picker', (tester) async {
     final container = await boot(tester);
     container.read(searchControllerProvider.notifier)
